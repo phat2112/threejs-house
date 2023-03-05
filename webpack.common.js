@@ -23,7 +23,11 @@ module.exports = {
         },
       },
       {
-        test: /\.(png|jpe?g|gif)$/i,
+        test: /\.obj$/,
+        loader: "url-loader",
+      },
+      {
+        test: /\.(png|jpe?g|gif|gltf|glb)$/i,
         use: [
           {
             loader: "file-loader",
