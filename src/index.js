@@ -11,27 +11,34 @@ const canvas = document.querySelector(".webgl");
 const rayCaster = new THREE.Raycaster();
 const gui = new dat.GUI({ name: "debug UI" });
 
+const progress = document.getElementById("progress-bar");
+const progressContainer = document.querySelector(".progress-bar-container");
+
 // parameters
 const cursor = new THREE.Vector2();
-
 const sizes = {
   width: window.innerWidth,
   height: window.innerHeight,
 };
-
-// global variables
-const MAX_DELAY = 5;
 let intersects;
 let table;
-let currentTargetObj;
-let count = 0;
 
 // scene background
 scene.background = new THREE.Color(0xffffff);
 
+const loadingManager = new THREE.LoadingManager();
+
+loadingManager.onProgress = (url, loaded, total) => {
+  progress.value = (loaded / total) * 10;
+};
+
+loadingManager.onLoad = () => {
+  progressContainer.style.display = "none";
+};
+
 // loaders
-const textureLoader = new THREE.TextureLoader();
-const gltfLoader = new GLTFLoader();
+const textureLoader = new THREE.TextureLoader(loadingManager);
+const gltfLoader = new GLTFLoader(loadingManager);
 
 // floor texture
 const floorMap = textureLoader.load(
@@ -143,6 +150,8 @@ const renderer = new THREE.WebGL1Renderer({
 
 // control
 const control = new OrbitControls(camera, renderer.domElement);
+control.maxDistance = 5;
+control.minDistance = 0;
 
 renderer.setSize(sizes.width, sizes.height);
 
@@ -164,12 +173,12 @@ window.addEventListener("resize", () => {
   renderer.setSize(sizes.width, sizes.height);
 });
 
-const handleUpdateCamera = (object) => {
-  if (currentTargetObj) {
-    count = 0;
+const handleUpdateCamera = (object, autoRotate = false) => {
+  control.target = object.position;
+  control.autoRotate = autoRotate;
+  if (autoRotate) {
+    control.autoRotateSpeed = 0.8;
   }
-  camera.lookAt(object.position);
-  currentTargetObj = object;
 };
 
 window.addEventListener("click", () => {
@@ -205,10 +214,7 @@ window.addEventListener("click", () => {
           duration: 1.5,
           onUpdate: () => {
             if (table) {
-              handleUpdateCamera(table);
-              control.target = table.position;
-              control.autoRotate = true;
-              control.autoRotateSpeed = 0.5;
+              handleUpdateCamera(table, true);
             }
           },
         });
